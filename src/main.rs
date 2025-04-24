@@ -12,7 +12,7 @@ impl EventHandler for Handler {
     // メッセージが作成されたときに呼ばれる関数
     async fn message(&self, ctx: Context, msg: Message) {
         // メッセージの内容が "侍" と完全に一致する場合
-        if msg.content == "侍" {
+        if msg.content.contains("侍") {
             println!("Received '侍' from user: {}", msg.author.name); // デバッグ用ログ
 
             // リアクションに使うカスタム絵文字の名前
