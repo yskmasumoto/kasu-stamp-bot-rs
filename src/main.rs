@@ -3,6 +3,7 @@ use serenity::async_trait;
 use serenity::model::{channel::Message, gateway::Ready, prelude::*};
 use serenity::prelude::*;
 use std::env;
+mod detect;
 
 // イベントハンドラ用構造体
 struct Handler;
@@ -12,7 +13,9 @@ impl EventHandler for Handler {
     // メッセージが作成されたときに呼ばれる関数
     async fn message(&self, ctx: Context, msg: Message) {
         // メッセージの内容が "侍" と完全に一致する場合
-        if msg.content.contains("侍") {
+        let is_samurai = detect::contains_samurai_phrase(&msg.content);
+
+        if is_samurai {
             println!("Received '侍' from user: {}", msg.author.name); // デバッグ用ログ
 
             // リアクションに使うカスタム絵文字の名前
