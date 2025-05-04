@@ -22,7 +22,7 @@
 1.  **リポジトリをクローンする:**
 
     ```bash
-    git clone [https://github.com/your_username/kasu-stamp-bot-rs.git](https://github.com/yskmasumoto/kasu-stamp-bot-rs.git)
+    git clone https://github.com/yskmasumoto/kasu-stamp-bot-rs.git
     cd kasu-stamp-bot-rs
     ```
 
