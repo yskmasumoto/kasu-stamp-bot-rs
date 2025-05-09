@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+log = "^0.4.27"
+rand = "^0.9.1"
+anyhow = "^1.0.98"
 serenity = { version = "^0.12.4", default-features = false, features = [
     "client",
     "gateway",
@@ -11,8 +14,8 @@ serenity = { version = "^0.12.4", default-features = false, features = [
     "model",
     "cache",
 ] }
-
-tokio = { version = "^1.44.2", features = ["macros", "rt-multi-thread"] }
+polars = { version = "^0.46.0", features = ["lazy", "csv", "strings"] }
+tokio = { version = "^1.45.0", features = ["macros", "rt-multi-thread"] }
 async-trait = "^0.1.88"
 dotenv = "^0.15.0"
 regex = "^1.11.1"

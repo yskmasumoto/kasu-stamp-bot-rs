@@ -1,12 +1,19 @@
-use serenity::all::ReactionType;
 use serenity::async_trait;
 use serenity::model::{channel::Message, gateway::Ready, prelude::*};
 use serenity::prelude::*;
 use std::env;
+use once_cell::sync::Lazy;
 mod detect;
+mod table;
+mod discord;
+use polars::prelude::*;
+use log::{info, error};
 
 // イベントハンドラ用構造体
 struct Handler;
+
+// テーブル
+static SAMURAI_DATA: Lazy<Result<DataFrame, PolarsError>> = Lazy::new(|| table::read_samurai_csv());
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -16,63 +23,38 @@ impl EventHandler for Handler {
         let is_samurai = detect::contains_samurai_phrase(&msg.content);
 
         if is_samurai {
-            println!("Received '侍' from user: {}", msg.author.name); // デバッグ用ログ
+            info!("Received '侍' from user: {}", msg.author.name);
 
-            // リアクションに使うカスタム絵文字の名前
-            let target_emoji_name = "kasu"; // :kasu: の名前部分
+            // --- メッセージの内容に応じてリアクションを実行 ---
+            discord::reaction(&ctx, &msg).await;
 
-            // メッセージが送信されたサーバー(Guild)のIDを取得
-            // (ダイレクトメッセージでは動作しない)
-            let guild_id = match msg.guild_id {
-                Some(id) => id,
-                None => {
-                    println!("Cannot react in DMs.");
+            // --- SAMURAI_DATAからDataFrameを取得 ---
+            let df = match &*SAMURAI_DATA {
+                Ok(data) => data,
+                Err(e) => {
+                    error!("Error: {}", e);
                     return;
                 }
             };
-
-            // — キャッシュ取得 ↓ を HTTP 取得に置き換え —
-            let http_guild = match ctx.http.get_guild(guild_id).await {
-                Ok(g) => g,
-                Err(why) => {
-                    eprintln!("Failed to fetch guild via HTTP: {:?}", why);
+            let sname_res = table::get_samurai_name(&df); // Samurai ID を取得
+            let sname = match sname_res {
+                Ok(Some(name)) => name,
+                Ok(None) => {
+                    error!("Samurai not found");
+                    return;
+                }
+                Err(e) => {
+                    error!("Error: {}", e);
                     return;
                 }
             };
-            let guild_name = http_guild.name.clone();
-
-            // (1) Emoji だけを取り出す
-            let emoji_opt = http_guild
-                .emojis
-                .values() // &Emoji のイテレータ
-                .find(|e| e.name == target_emoji_name)
-                .cloned(); // Emoji をクローン
-
-            if let Some(emoji) = emoji_opt {
-                // (2) そのまま Emoji を From できる
-                let reaction = ReactionType::from(emoji.clone());
-                println!("Found emoji: {} (ID: {})", emoji.name, emoji.id);
-
-                if let Err(why) = msg.react(&ctx.http, reaction).await {
-                    eprintln!("Error reacting to message {}: {:?}", msg.id, why);
-                } else {
-                    println!(
-                        "Successfully reacted with :{}: to message {}",
-                        target_emoji_name, msg.id
-                    );
-                }
-            } else {
-                eprintln!(
-                    "Error: Custom emoji ':{}:' not found in guild '{}' (ID: {}).",
-                    target_emoji_name, guild_name, guild_id
-                );
-            }
+            info!("Samurai name: {}", sname);
         }
     }
 
     // ボットが起動し、準備ができたときに呼ばれる関数
     async fn ready(&self, _: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
+        info!("{} is connected!", ready.user.name);
     }
 }
 
@@ -95,8 +77,14 @@ async fn main() {
         .await
         .expect("Error creating client");
 
+    // --- 利用データの取得 ---
+    match &*SAMURAI_DATA {
+        Ok(data) => info!("{:?}", data),
+        Err(e) => error!("Error: {}", e),
+    }
+
     // --- ボットの起動 ---
     if let Err(why) = client.start().await {
-        eprintln!("Client error: {:?}", why);
+        error!("Client error: {:?}", why);
     }
 }
