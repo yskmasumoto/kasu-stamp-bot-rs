@@ -1,78 +1,84 @@
-use serenity::all::ReactionType;
 use serenity::async_trait;
 use serenity::model::{channel::Message, gateway::Ready, prelude::*};
 use serenity::prelude::*;
+use table::SamuraiEntry;
+use anyhow::Error;
 use std::env;
+use once_cell::sync::Lazy;
 mod detect;
+mod table;
+mod discord;
+use log::{info, error};
 
 // イベントハンドラ用構造体
 struct Handler;
 
+// テーブル
+static SAMURAI_DATA: Lazy<Result<Vec<SamuraiEntry>, Error>> = Lazy::new(|| table::read_samurai_csv_as_vec());
+
 #[async_trait]
 impl EventHandler for Handler {
-    // メッセージが作成されたときに呼ばれる関数
+    /// メッセージが送信されたときに呼ばれる関数
+    /// # 引数
+    /// * `ctx` - コンテキスト (メッセージの送信先やボットの情報など)
+    /// * `msg` - 送信されたメッセージ
     async fn message(&self, ctx: Context, msg: Message) {
-        // メッセージの内容が "侍" と完全に一致する場合
+        // --- メッセージがボットからのものであれば無視 ---
+        if msg.author.bot {
+            return;
+        }
+
+        // --- メッセージがダイレクトメッセージであれば無視 ---
+        if msg.guild_id.is_none() {
+            info!("Received DM from user: {}", msg.author.name);
+            return;
+        }
+
+        // --- メッセージの内容から侍を検出 ---
         let is_samurai = detect::contains_samurai_phrase(&msg.content);
 
         if is_samurai {
-            println!("Received '侍' from user: {}", msg.author.name); // デバッグ用ログ
+            info!("Received '侍' from user: {}", msg.author.name);
 
-            // リアクションに使うカスタム絵文字の名前
-            let target_emoji_name = "kasu"; // :kasu: の名前部分
+            // --- メッセージの内容に応じてリアクションを実行 ---
+            discord::samurai_reaction(&ctx, &msg).await;
 
-            // メッセージが送信されたサーバー(Guild)のIDを取得
-            // (ダイレクトメッセージでは動作しない)
-            let guild_id = match msg.guild_id {
-                Some(id) => id,
-                None => {
-                    println!("Cannot react in DMs.");
+            // --- SAMURAI_DATAからDataFrameを取得 ---
+            let df = match &*SAMURAI_DATA {
+                Ok(data) => data,
+                Err(e) => {
+                    error!("Error: {}", e);
                     return;
                 }
             };
 
-            // — キャッシュ取得 ↓ を HTTP 取得に置き換え —
-            let http_guild = match ctx.http.get_guild(guild_id).await {
-                Ok(g) => g,
-                Err(why) => {
-                    eprintln!("Failed to fetch guild via HTTP: {:?}", why);
+            // --- ランダムな侍を過去データから取得 ---
+            let sname_res = table::get_samurai_name(df); // Samurai ID を取得
+            let sname = match sname_res {
+                Ok(Some(name)) => name,
+                Ok(None) => {
+                    error!("Samurai not found");
+                    return;
+                }
+                Err(e) => {
+                    error!("Error: {}", e);
                     return;
                 }
             };
-            let guild_name = http_guild.name.clone();
+            info!("Samurai name: {}", sname);
 
-            // (1) Emoji だけを取り出す
-            let emoji_opt = http_guild
-                .emojis
-                .values() // &Emoji のイテレータ
-                .find(|e| e.name == target_emoji_name)
-                .cloned(); // Emoji をクローン
-
-            if let Some(emoji) = emoji_opt {
-                // (2) そのまま Emoji を From できる
-                let reaction = ReactionType::from(emoji.clone());
-                println!("Found emoji: {} (ID: {})", emoji.name, emoji.id);
-
-                if let Err(why) = msg.react(&ctx.http, reaction).await {
-                    eprintln!("Error reacting to message {}: {:?}", msg.id, why);
-                } else {
-                    println!(
-                        "Successfully reacted with :{}: to message {}",
-                        target_emoji_name, msg.id
-                    );
-                }
-            } else {
-                eprintln!(
-                    "Error: Custom emoji ':{}:' not found in guild '{}' (ID: {}).",
-                    target_emoji_name, guild_name, guild_id
-                );
-            }
+            // --- メッセージにリプライ ---
+            discord::samurai_reply(&ctx, &msg, &sname).await;
+            info!("Replied to message: {}", msg.id);
         }
     }
 
-    // ボットが起動し、準備ができたときに呼ばれる関数
+    /// ボットが起動したときに呼ばれる関数
+    /// # 引数
+    /// * `ctx` - コンテキスト (メッセージの送信先やボットの情報など)
+    /// * `ready` - ボットの準備が完了したことを示す情報（ユーザー名など）
     async fn ready(&self, _: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
+        info!("{} is connected!", ready.user.name);
     }
 }
 
@@ -95,8 +101,14 @@ async fn main() {
         .await
         .expect("Error creating client");
 
+    // --- 利用データの取得 ---
+    match &*SAMURAI_DATA {
+        Ok(data) => info!("{:?}", data),
+        Err(e) => error!("Error: {}", e),
+    }
+
     // --- ボットの起動 ---
     if let Err(why) = client.start().await {
-        eprintln!("Client error: {:?}", why);
+        error!("Client error: {:?}", why);
     }
 }
