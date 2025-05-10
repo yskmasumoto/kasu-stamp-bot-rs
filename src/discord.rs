@@ -7,7 +7,7 @@ use log::{info, error};
 /// # 引数
 /// * `ctx` - コンテキスト (メッセージの送信先やボットの情報など)
 /// * `msg` - リアクションを追加するメッセージ
-pub async fn reaction(ctx: &Context, msg: &Message) {
+pub async fn samurai_reaction(ctx: &Context, msg: &Message) {
     // リアクションに使うカスタム絵文字の名前
     let target_emoji_name = "kasu"; // :kasu: の名前部分
 
@@ -56,5 +56,17 @@ pub async fn reaction(ctx: &Context, msg: &Message) {
             "Error: Custom emoji ':{}:' not found in guild '{}' (ID: {}).",
             target_emoji_name, guild_name, guild_id
         );
+    }
+}
+
+
+//// メッセージに返信する関数
+/// # 引数
+/// * `ctx` - コンテキスト (メッセージの送信先やボットの情報など)
+/// * `msg` - 返信するメッセージ
+/// * `content` - 返信内容
+pub async fn samurai_reply(ctx: &Context, msg: &Message, content: &str) {
+    if let Err(why) = msg.reply(ctx, content).await {
+        error!("Error replying to message {}: {:?}", msg.id, why);
     }
 }

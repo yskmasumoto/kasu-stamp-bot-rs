@@ -1,19 +1,20 @@
 use serenity::async_trait;
 use serenity::model::{channel::Message, gateway::Ready, prelude::*};
 use serenity::prelude::*;
+use table::SamuraiEntry;
+use anyhow::Error;
 use std::env;
 use once_cell::sync::Lazy;
 mod detect;
 mod table;
 mod discord;
-use polars::prelude::*;
 use log::{info, error};
 
 // イベントハンドラ用構造体
 struct Handler;
 
 // テーブル
-static SAMURAI_DATA: Lazy<Result<DataFrame, PolarsError>> = Lazy::new(|| table::read_samurai_csv());
+static SAMURAI_DATA: Lazy<Result<Vec<SamuraiEntry>, Error>> = Lazy::new(|| table::read_samurai_csv_as_vec());
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -22,6 +23,17 @@ impl EventHandler for Handler {
     /// * `ctx` - コンテキスト (メッセージの送信先やボットの情報など)
     /// * `msg` - 送信されたメッセージ
     async fn message(&self, ctx: Context, msg: Message) {
+        // --- メッセージがボットからのものであれば無視 ---
+        if msg.author.bot {
+            return;
+        }
+
+        // --- メッセージがダイレクトメッセージであれば無視 ---
+        if msg.guild_id.is_none() {
+            info!("Received DM from user: {}", msg.author.name);
+            return;
+        }
+
         // --- メッセージの内容から侍を検出 ---
         let is_samurai = detect::contains_samurai_phrase(&msg.content);
 
@@ -29,7 +41,7 @@ impl EventHandler for Handler {
             info!("Received '侍' from user: {}", msg.author.name);
 
             // --- メッセージの内容に応じてリアクションを実行 ---
-            discord::reaction(&ctx, &msg).await;
+            discord::samurai_reaction(&ctx, &msg).await;
 
             // --- SAMURAI_DATAからDataFrameを取得 ---
             let df = match &*SAMURAI_DATA {
@@ -39,6 +51,8 @@ impl EventHandler for Handler {
                     return;
                 }
             };
+
+            // --- ランダムな侍を過去データから取得 ---
             let sname_res = table::get_samurai_name(df); // Samurai ID を取得
             let sname = match sname_res {
                 Ok(Some(name)) => name,
@@ -52,6 +66,10 @@ impl EventHandler for Handler {
                 }
             };
             info!("Samurai name: {}", sname);
+
+            // --- メッセージにリプライ ---
+            discord::samurai_reply(&ctx, &msg, &sname).await;
+            info!("Replied to message: {}", msg.id);
         }
     }
 
