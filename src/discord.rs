@@ -3,6 +3,10 @@ use serenity::model::channel::Message;
 use serenity::client::Context;
 use log::{info, error};
 
+/// リアクションを追加する関数
+/// # 引数
+/// * `ctx` - コンテキスト (メッセージの送信先やボットの情報など)
+/// * `msg` - リアクションを追加するメッセージ
 pub async fn reaction(ctx: &Context, msg: &Message) {
     // リアクションに使うカスタム絵文字の名前
     let target_emoji_name = "kasu"; // :kasu: の名前部分

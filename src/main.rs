@@ -17,9 +17,12 @@ static SAMURAI_DATA: Lazy<Result<DataFrame, PolarsError>> = Lazy::new(|| table::
 
 #[async_trait]
 impl EventHandler for Handler {
-    // メッセージが作成されたときに呼ばれる関数
+    /// メッセージが送信されたときに呼ばれる関数
+    /// # 引数
+    /// * `ctx` - コンテキスト (メッセージの送信先やボットの情報など)
+    /// * `msg` - 送信されたメッセージ
     async fn message(&self, ctx: Context, msg: Message) {
-        // メッセージの内容が "侍" と完全に一致する場合
+        // --- メッセージの内容から侍を検出 ---
         let is_samurai = detect::contains_samurai_phrase(&msg.content);
 
         if is_samurai {
@@ -36,7 +39,7 @@ impl EventHandler for Handler {
                     return;
                 }
             };
-            let sname_res = table::get_samurai_name(&df); // Samurai ID を取得
+            let sname_res = table::get_samurai_name(df); // Samurai ID を取得
             let sname = match sname_res {
                 Ok(Some(name)) => name,
                 Ok(None) => {
@@ -52,7 +55,10 @@ impl EventHandler for Handler {
         }
     }
 
-    // ボットが起動し、準備ができたときに呼ばれる関数
+    /// ボットが起動したときに呼ばれる関数
+    /// # 引数
+    /// * `ctx` - コンテキスト (メッセージの送信先やボットの情報など)
+    /// * `ready` - ボットの準備が完了したことを示す情報（ユーザー名など）
     async fn ready(&self, _: Context, ready: Ready) {
         info!("{} is connected!", ready.user.name);
     }

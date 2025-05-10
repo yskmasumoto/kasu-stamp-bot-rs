@@ -4,6 +4,12 @@ use anyhow::{Result, bail, anyhow};
 use std::env;
 use log::info;
 
+/// csvのデータ数からランダムな Samurai ID を取得する関数
+/// # 引数
+/// * `idlength` - CSVファイルのデータ数
+/// 
+/// # 戻り値
+/// * `u32` - ランダムな Samurai ID
 pub fn get_random_samurai_id(idlength: u32) -> u32 {
     // ランダムな Samurai ID を生成する関数
     // 0 から idlength - 1 の範囲でランダムな整数を生成
@@ -13,6 +19,13 @@ pub fn get_random_samurai_id(idlength: u32) -> u32 {
     number as u32
 }
 
+/// CSVファイルを読み込み、データフレームに変換する関数
+/// # 引数
+/// * `csv_path` - CSVファイルのパス
+/// 
+/// # 戻り値
+/// * `Ok(df)` - 読み込んだデータフレーム
+/// * `Err(e)` - エラーが発生した場合
 pub fn read_samurai_csv() -> Result<DataFrame, PolarsError> {
     dotenv::dotenv().ok();
     let _samurai_csv_path = env::var("SAMURAI_CSV_PATH").expect("Expected a CSV path in the environment");
@@ -37,7 +50,14 @@ pub fn read_samurai_csv() -> Result<DataFrame, PolarsError> {
     Ok(df)
 }
 
-
+/// Samurai ID に基づいて名前を取得する関数
+/// # 引数
+/// * `df` - 読み込んだデータフレーム
+/// 
+/// # 戻り値
+/// * `Ok(Some(name))` - Samurai ID に基づいて取得した名前と説明
+/// * `Ok(None)` - Samurai ID が見つからなかった場合
+/// * `Err(e)` - エラーが発生した場合
 pub fn get_samurai_name(df: &DataFrame) -> Result<Option<String>> {
     // "S_No."列を取得
     let s_no_column = df.column("S_No.")
