@@ -37,14 +37,14 @@ pub fn read_samurai_csv_as_vec() -> Result<Vec<SamuraiEntry>, Error> {
     let _samurai_csv_path =
         env::var("SAMURAI_CSV_PATH").expect("Expected a CSV path in the environment");
 
-    let file = File::open(&_samurai_csv_path).map_err(|e| e)?;
+    let file = File::open(&_samurai_csv_path)?;
 
     let mut rdr = ReaderBuilder::new().has_headers(true).from_reader(file);
 
     let mut samurai_entries = Vec::new();
 
     // ヘッダーを読み飛ばして、"Name"と"Description"のインデックスを取得
-    let headers = rdr.headers().map_err(|e| e)?;
+    let headers = rdr.headers()?;
     let name_index = headers.iter().position(|h| h == "Name").ok_or_else(|| {
         Error::from(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
@@ -62,7 +62,7 @@ pub fn read_samurai_csv_as_vec() -> Result<Vec<SamuraiEntry>, Error> {
         })?;
 
     for result in rdr.records() {
-        let record = result.map_err(|e| e)?;
+        let record = result?;
         let name = record.get(name_index).unwrap_or("").to_string();
         let description = record.get(description_index).unwrap_or("");
 
@@ -103,10 +103,10 @@ pub fn get_samurai_name(samurai_entries: &[SamuraiEntry]) -> Result<Option<Strin
             "Samurai ID: {}, Name: {}, Description: {}",
             id, name, description
         );
-        return Ok(Some(format!("{}: {}\n{}", id, name, description)));
+        Ok(Some(format!("{}: {}\n{}", id, name, description)))
     } else {
         error!("Samurai ID {} not found", id);
-        return Ok(None);
+        Ok(None)
     }
 }
 

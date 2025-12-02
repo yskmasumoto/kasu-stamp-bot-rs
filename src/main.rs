@@ -15,7 +15,7 @@ struct Handler;
 
 // テーブル
 static SAMURAI_DATA: Lazy<Result<Vec<SamuraiEntry>, Error>> =
-    Lazy::new(|| table::read_samurai_csv_as_vec());
+    Lazy::new(table::read_samurai_csv_as_vec);
 
 #[async_trait]
 impl EventHandler for Handler {
