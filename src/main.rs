@@ -1,20 +1,21 @@
+use anyhow::Error;
+use once_cell::sync::Lazy;
 use serenity::async_trait;
 use serenity::model::{channel::Message, gateway::Ready, prelude::*};
 use serenity::prelude::*;
-use table::SamuraiEntry;
-use anyhow::Error;
 use std::env;
-use once_cell::sync::Lazy;
+use table::SamuraiEntry;
 mod detect;
-mod table;
 mod discord;
-use log::{info, error};
+mod table;
+use log::{error, info};
 
 // イベントハンドラ用構造体
 struct Handler;
 
 // テーブル
-static SAMURAI_DATA: Lazy<Result<Vec<SamuraiEntry>, Error>> = Lazy::new(|| table::read_samurai_csv_as_vec());
+static SAMURAI_DATA: Lazy<Result<Vec<SamuraiEntry>, Error>> =
+    Lazy::new(|| table::read_samurai_csv_as_vec());
 
 #[async_trait]
 impl EventHandler for Handler {
