@@ -1,9 +1,9 @@
-use rand::{rng, Rng};
 use anyhow::{Error, Ok, Result};
-use std::{env, fmt::Debug};
-use log::{info, error};
-use std::fs::File;
 use csv::ReaderBuilder;
+use log::{error, info};
+use rand::{Rng, rng};
+use std::fs::File;
+use std::{env, fmt::Debug};
 
 // データを保持するための構造体
 #[derive(Debug, Clone)]
@@ -15,7 +15,7 @@ pub struct SamuraiEntry {
 /// csvのデータ数からランダムな Samurai ID を取得する関数
 /// # 引数
 /// * `idlength` - CSVファイルのデータ数
-/// 
+///
 /// # 戻り値
 /// * `u32` - ランダムな Samurai ID
 pub fn get_random_samurai_id(idlength: u32) -> u32 {
@@ -34,28 +34,35 @@ pub fn get_random_samurai_id(idlength: u32) -> u32 {
 pub fn read_samurai_csv_as_vec() -> Result<Vec<SamuraiEntry>, Error> {
     // csvファイルのパスを取得
     dotenv::dotenv().ok();
-    let _samurai_csv_path = env::var("SAMURAI_CSV_PATH").expect("Expected a CSV path in the environment");
-    
-    let file = File::open(&_samurai_csv_path)
-        .map_err(|e| e)?;
+    let _samurai_csv_path =
+        env::var("SAMURAI_CSV_PATH").expect("Expected a CSV path in the environment");
 
-    let mut rdr = ReaderBuilder::new()
-        .has_headers(true)
-        .from_reader(file);
+    let file = File::open(&_samurai_csv_path)?;
+
+    let mut rdr = ReaderBuilder::new().has_headers(true).from_reader(file);
 
     let mut samurai_entries = Vec::new();
 
     // ヘッダーを読み飛ばして、"Name"と"Description"のインデックスを取得
-    let headers = rdr.headers()
-        .map_err(|e| e)?;
-    let name_index = headers.iter().position(|h| h == "Name")
-        .ok_or_else(|| Error::from(std::io::Error::new(std::io::ErrorKind::InvalidData, "Failed to find 'Name' column")))?;
-    let description_index = headers.iter().position(|h| h == "Description")
-        .ok_or_else(|| Error::from(std::io::Error::new(std::io::ErrorKind::InvalidData, "Failed to find 'Description' column")))?;
+    let headers = rdr.headers()?;
+    let name_index = headers.iter().position(|h| h == "Name").ok_or_else(|| {
+        Error::from(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "Failed to find 'Name' column",
+        ))
+    })?;
+    let description_index = headers
+        .iter()
+        .position(|h| h == "Description")
+        .ok_or_else(|| {
+            Error::from(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Failed to find 'Description' column",
+            ))
+        })?;
 
     for result in rdr.records() {
-        let record = result
-            .map_err(|e| e)?;
+        let record = result?;
         let name = record.get(name_index).unwrap_or("").to_string();
         let description = record.get(description_index).unwrap_or("");
 
@@ -71,7 +78,7 @@ pub fn read_samurai_csv_as_vec() -> Result<Vec<SamuraiEntry>, Error> {
 /// Samurai ID に基づいて名前を取得する関数
 /// # 引数
 /// * `df` - 読み込んだデータフレーム
-/// 
+///
 /// # 戻り値
 /// * `Ok(Some(name))` - Samurai ID に基づいて取得した名前と説明
 /// * `Ok(None)` - Samurai ID が見つからなかった場合
@@ -92,11 +99,14 @@ pub fn get_samurai_name(samurai_entries: &[SamuraiEntry]) -> Result<Option<Strin
         let description = &entry.description;
 
         // name と description を改行コードで結合して返す
-        info!("Samurai ID: {}, Name: {}, Description: {}", id, name, description);
-        return Ok(Some(format!("{}: {}\n{}", id, name, description)));
+        info!(
+            "Samurai ID: {}, Name: {}, Description: {}",
+            id, name, description
+        );
+        Ok(Some(format!("{}: {}\n{}", id, name, description)))
     } else {
         error!("Samurai ID {} not found", id);
-        return Ok(None);
+        Ok(None)
     }
 }
 

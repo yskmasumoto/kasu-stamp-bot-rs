@@ -1,7 +1,7 @@
+use log::{error, info};
 use serenity::all::ReactionType;
-use serenity::model::channel::Message;
 use serenity::client::Context;
-use log::{info, error};
+use serenity::model::channel::Message;
 
 /// リアクションを追加する関数
 /// # 引数
@@ -59,8 +59,7 @@ pub async fn samurai_reaction(ctx: &Context, msg: &Message) {
     }
 }
 
-
-//// メッセージに返信する関数
+/// メッセージに返信する関数
 /// # 引数
 /// * `ctx` - コンテキスト (メッセージの送信先やボットの情報など)
 /// * `msg` - 返信するメッセージ
