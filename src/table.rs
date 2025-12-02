@@ -1,7 +1,7 @@
 use anyhow::{Error, Ok, Result};
 use csv::ReaderBuilder;
 use log::{error, info};
-use rand::{rng, Rng};
+use rand::{Rng, rng};
 use std::fs::File;
 use std::{env, fmt::Debug};
 
