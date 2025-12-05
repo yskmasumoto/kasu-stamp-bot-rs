@@ -12,6 +12,7 @@ applyTo: "**/*.rs"
 
 推奨:
 - **`src/main.rs`**: 設定読み込み、クライアント初期化、イベントループの定義のみに留める
+- **`src/config.rs`**: アプリケーション設定の管理 (`config` crate を使用して環境変数や設定ファイルから読み込む)
 - **`src/detect.rs`**: 正規表現や文字列判定などの「純粋関数」ロジック (Serenity/Contextに依存しない)
 - **`src/discord.rs`**: APIコール (Reply, React) など `Context` を必要とする副作用
 - **`src/table.rs`**: データ構造定義とCSV読み込み/ランダム取得ロジック
@@ -41,3 +42,31 @@ let val = func().context("Failed to execute func")?;
 
 // 避けるべき例
 let val = func().unwrap();
+```
+
+## 設定管理
+
+要求:
+- ライブラリ: `config` crate を使用して環境変数や設定ファイルから設定を読み込む
+- .env ファイルのサポート: `dotenv` クレートは長年更新されていないため、使用禁止
+- 設定の優先順位: 環境変数 > 設定ファイル (config.toml など) の順で優先する
+
+推奨パターン:
+```rust
+// 設定構造体の定義 (src/config.rs)
+#[derive(Debug, Deserialize)]
+pub struct AppConfig {
+    #[serde(rename = "DISCORD_TOKEN")]
+    pub discord_token: String,
+}
+
+impl AppConfig {
+    pub fn load() -> Result<Self> {
+        let config = config::Config::builder()
+            .add_source(config::File::with_name("config").required(false))
+            .add_source(config::Environment::default())
+            .build()?;
+        config.try_deserialize()
+    }
+}
+```
