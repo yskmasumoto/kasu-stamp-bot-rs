@@ -101,7 +101,7 @@ async fn main() {
         | GatewayIntents::GUILD_EMOJIS_AND_STICKERS; // サーバーの絵文字リスト取得
 
     // --- クライアントの構築 ---
-    let mut client = Client::builder(&token, intents)
+    let mut client = Client::builder(token, intents)
         .event_handler(Handler) // 作成したイベントハンドラを設定
         .await
         .expect("Error creating client");
