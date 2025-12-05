@@ -1,10 +1,10 @@
+use crate::config::app_config;
 use anyhow::{Error, Ok, Result};
 use csv::ReaderBuilder;
 use log::{error, info};
 use rand::{Rng, rng};
 use std::fs::File;
 use std::io::Read;
-use std::{env, fmt::Debug};
 
 // データを保持するための構造体
 #[derive(Debug, Clone)]
@@ -29,19 +29,17 @@ pub fn get_random_samurai_id(idlength: u32) -> u32 {
 }
 
 /// CSVファイルを読み込んで SamuraiEntry のベクタを返す関数
-/// 
-/// 注意: この関数は環境変数から直接 SAMURAI_CSV_PATH を読み込みます。
-/// 環境変数は main() で AppConfig::load() が呼ばれる前に設定されている必要があります。
+///
+/// 注意: この関数は `config::app_config()` から `SAMURAI_CSV_PATH` を取得します。
+/// `config::init_app_config()` が bot 起動時に呼び出されている前提で動作します。
 /// この関数は静的な Lazy 初期化で使用されるため、パラメータを受け取ることができません。
-/// 
+///
 /// # 戻り値
 /// * `Ok(Vec<SamuraiEntry>)` - 読み込んだ SamuraiEntry のベクタ
 /// * `Err(Error)` - エラーが発生した場合
 pub fn read_samurai_csv_as_vec() -> Result<Vec<SamuraiEntry>, Error> {
-    let _samurai_csv_path =
-        env::var("SAMURAI_CSV_PATH").expect("Expected a CSV path in the environment");
-
-    let file = File::open(&_samurai_csv_path)?;
+    let samurai_csv_path = &app_config().samurai_csv_path;
+    let file = File::open(samurai_csv_path)?;
     parse_samurai_reader(file)
 }
 

@@ -1,12 +1,13 @@
+use anyhow::Context as anyhowContext;
 use anyhow::Error;
 use once_cell::sync::Lazy;
 use serenity::async_trait;
 use serenity::model::{channel::Message, gateway::Ready, prelude::*};
 use serenity::prelude::*;
+mod config;
 mod detect;
 mod discord;
 mod table;
-mod config;
 use log::{error, info};
 use table::SamuraiEntry;
 
@@ -87,8 +88,10 @@ impl EventHandler for Handler {
 async fn main() {
     // --- 設定の読み込み ---
     // 環境変数またはconfig.tomlファイルから設定を読み込む
-    let app_config = config::AppConfig::load().expect("Failed to load configuration");
-    let token = app_config.discord_token;
+    let app_config = config::init_app_config()
+        .context("Failed to initialize configuration")
+        .expect("Configuration is required to start the bot");
+    let token = &app_config.discord_token;
 
     // --- インテントの設定 ---
     // ボットが必要とする権限(Intents)を設定する
