@@ -7,7 +7,7 @@
 * `[任意の文字]侍` というパターンのメッセージ（例: 「ピタッとハウス侍」、「ゲームしたい侍」）を検知します。
 * 検知したメッセージにカスタム絵文字 `:kasu:` でリアクションを付けます。
 * 必要なイベントを効率的に受信するために Discord Gateway Intents を使用します。
-* セキュリティのため、Discord ボットトークンを `.env` ファイルから読み込みます。
+* セキュリティのため、Discord ボットトークンを環境変数から読み込みます。
 
 ## 必要条件
 
@@ -26,15 +26,27 @@
     cd kasu-stamp-bot-rs
     ```
 
-2.  **`.env` ファイルを作成する:**
+2.  **環境変数を設定する:**
 
-    プロジェクトのルートディレクトリに `.env` という名前のファイルを作成し、Discord ボットトークンを記述します:
+    以下のいずれかの方法で環境変数を設定します:
 
-    ```dotenv
-    DISCORD_TOKEN=あなたのボットトークンをここに記述
+    **方法1: 環境変数を直接設定**
+    ```bash
+    export DISCORD_TOKEN=あなたのボットトークンをここに記述
+    export SAMURAI_CSV_PATH=data/samurai.csv
+    ```
+
+    **方法2: config.toml ファイルを作成**
+    
+    プロジェクトのルートディレクトリに `config.toml` という名前のファイルを作成し、以下のように記述します:
+    ```toml
+    DISCORD_TOKEN = "あなたのボットトークンをここに記述"
+    SAMURAI_CSV_PATH = "data/samurai.csv"
     ```
 
     `あなたのボットトークンをここに記述` を実際のボットトークンに置き換えてください。
+
+    **注意**: 以前のバージョンでは `.env` ファイルを使用していましたが、`dotenv` クレートが長年更新されていないため、`config` クレートに移行しました。`.env` ファイルから移行する場合は、上記の方法のいずれかを使用してください。
 
 3.  **ボットを実行する:**
 
@@ -48,8 +60,9 @@
 
 ## 設定
 
-* **Discord トークン:** `.env` ファイルの `DISCORD_TOKEN` 環境変数で設定します。
-* **対象絵文字:** ボットはカスタム絵文字 `:kasu:` でリアクションするようにハードコードされています。これを変更するには、`src/main.rs` の `target_emoji_name` 変数を修正する必要があります。
+* **Discord トークン:** 環境変数 `DISCORD_TOKEN` または `config.toml` ファイルで設定します。
+* **侍CSVパス:** 環境変数 `SAMURAI_CSV_PATH` または `config.toml` ファイルで設定します。
+* **対象絵文字:** ボットはカスタム絵文字 `:kasu:` でリアクションするようにハードコードされています。これを変更するには、`src/discord.rs` の `target_emoji_name` 変数を修正する必要があります。
 * **検知パターン:** 「侍」で終わるメッセージを検知するためのパターンは、`src/detect.rs` の正規表現で定義されています。
 
 ## 動作解説
@@ -70,8 +83,10 @@
 * [`serenity`](https://crates.io/crates/serenity): Discord API 用の Rust ライブラリ。
 * [`tokio`](https://crates.io/crates/tokio): Rust のための非同期ランタイム。
 * [`async-trait`](https://crates.io/crates/async-trait): トレイトでの非同期関数を容易にするための手続きマクロ。
-* [`dotenv`](https://crates.io/crates/dotenv): `.env` ファイルから環境変数を読み込みます。
+* [`config`](https://crates.io/crates/config): 環境変数や設定ファイルから設定を読み込みます。
 * [`regex`](https://crates.io/crates/regex): 正規表現のための Rust ライブラリ。
 * [`once_cell`](https://crates.io/crates/once_cell): 静的変数の安全な一度だけ代入を実現します。
+* [`anyhow`](https://crates.io/crates/anyhow): エラーハンドリングを簡潔にするライブラリ。
+* [`csv`](https://crates.io/crates/csv): CSVファイルの読み書きをサポートします。
 
 特定のバージョンや機能については `Cargo.toml` を参照してください。

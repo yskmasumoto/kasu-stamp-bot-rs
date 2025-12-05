@@ -33,7 +33,6 @@ pub fn get_random_samurai_id(idlength: u32) -> u32 {
 /// * `Ok(Vec<SamuraiEntry>)` - 読み込んだ SamuraiEntry のベクタ
 /// * `Err(Error)` - エラーが発生した場合
 pub fn read_samurai_csv_as_vec() -> Result<Vec<SamuraiEntry>, Error> {
-    dotenv::dotenv().ok();
     let _samurai_csv_path =
         env::var("SAMURAI_CSV_PATH").expect("Expected a CSV path in the environment");
 

@@ -3,12 +3,12 @@ use once_cell::sync::Lazy;
 use serenity::async_trait;
 use serenity::model::{channel::Message, gateway::Ready, prelude::*};
 use serenity::prelude::*;
-use std::env;
-use table::SamuraiEntry;
 mod detect;
 mod discord;
 mod table;
+mod config;
 use log::{error, info};
+use table::SamuraiEntry;
 
 // イベントハンドラ用構造体
 struct Handler;
@@ -85,9 +85,10 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
-    // --- トークンの設定 ---
-    dotenv::dotenv().ok();
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+    // --- 設定の読み込み ---
+    // 環境変数またはconfig.tomlファイルから設定を読み込む
+    let app_config = config::AppConfig::load().expect("Failed to load configuration");
+    let token = app_config.discord_token;
 
     // --- インテントの設定 ---
     // ボットが必要とする権限(Intents)を設定する
