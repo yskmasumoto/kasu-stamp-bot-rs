@@ -29,6 +29,11 @@ pub fn get_random_samurai_id(idlength: u32) -> u32 {
 }
 
 /// CSVファイルを読み込んで SamuraiEntry のベクタを返す関数
+/// 
+/// 注意: この関数は環境変数から直接 SAMURAI_CSV_PATH を読み込みます。
+/// 環境変数は main() で AppConfig::load() が呼ばれる前に設定されている必要があります。
+/// この関数は静的な Lazy 初期化で使用されるため、パラメータを受け取ることができません。
+/// 
 /// # 戻り値
 /// * `Ok(Vec<SamuraiEntry>)` - 読み込んだ SamuraiEntry のベクタ
 /// * `Err(Error)` - エラーが発生した場合
