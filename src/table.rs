@@ -3,6 +3,7 @@ use csv::ReaderBuilder;
 use log::{error, info};
 use rand::{Rng, rng};
 use std::fs::File;
+use std::io::Read;
 use std::{env, fmt::Debug};
 
 // データを保持するための構造体
@@ -32,18 +33,24 @@ pub fn get_random_samurai_id(idlength: u32) -> u32 {
 /// * `Ok(Vec<SamuraiEntry>)` - 読み込んだ SamuraiEntry のベクタ
 /// * `Err(Error)` - エラーが発生した場合
 pub fn read_samurai_csv_as_vec() -> Result<Vec<SamuraiEntry>, Error> {
-    // csvファイルのパスを取得
     dotenv::dotenv().ok();
     let _samurai_csv_path =
         env::var("SAMURAI_CSV_PATH").expect("Expected a CSV path in the environment");
 
     let file = File::open(&_samurai_csv_path)?;
+    parse_samurai_reader(file)
+}
 
-    let mut rdr = ReaderBuilder::new().has_headers(true).from_reader(file);
+/// ヘッダーを解析して SamuraiEntry のベクタを返す関数
+/// # 引数
+/// * `reader` - 読み込むリーダー
+///
+/// # 戻り値
+/// * `Ok(Vec<SamuraiEntry>)` - 読み込んだ SamuraiEntry のベクタ
+/// * `Err(Error)` - エラーが発生した場合
+fn parse_samurai_reader<R: Read>(reader: R) -> Result<Vec<SamuraiEntry>, Error> {
+    let mut rdr = ReaderBuilder::new().has_headers(true).from_reader(reader);
 
-    let mut samurai_entries = Vec::new();
-
-    // ヘッダーを読み飛ばして、"Name"と"Description"のインデックスを取得
     let headers = rdr.headers()?;
     let name_index = headers.iter().position(|h| h == "Name").ok_or_else(|| {
         Error::from(std::io::Error::new(
@@ -61,17 +68,18 @@ pub fn read_samurai_csv_as_vec() -> Result<Vec<SamuraiEntry>, Error> {
             ))
         })?;
 
+    let mut samurai_entries = Vec::new();
     for result in rdr.records() {
         let record = result?;
         let name = record.get(name_index).unwrap_or("").to_string();
         let description = record.get(description_index).unwrap_or("");
 
         samurai_entries.push(SamuraiEntry {
-            // s_no: record.get(0).unwrap_or("").to_string(), // S_No.が必要な場合はコメントを外す
             name: name.to_string(),
             description: description.to_string(),
         });
     }
+
     Ok(samurai_entries)
 }
 
@@ -114,6 +122,13 @@ pub fn get_samurai_name(samurai_entries: &[SamuraiEntry]) -> Result<Option<Strin
 mod tests {
     use super::*;
     use log::error;
+    use std::io::Cursor;
+
+    const SAMPLE_CSV: &str = "S_No.,Name,Description\n1,テスト侍,テストテストテスト\n";
+
+    fn sample_entries() -> Vec<SamuraiEntry> {
+        parse_samurai_reader(Cursor::new(SAMPLE_CSV)).unwrap()
+    }
 
     #[test]
     fn test_get_random_samurai_id() {
@@ -123,23 +138,17 @@ mod tests {
 
     #[test]
     fn test_read_samurai_csv_as_vec() {
-        // CSVファイルを読み込む
-        let samurai_entries = read_samurai_csv_as_vec().unwrap();
-        // Samurai ID に基づいて名前を取得
+        let samurai_entries = sample_entries();
         let name = get_samurai_name(&samurai_entries).unwrap();
 
-        // 名前が取得できたことを確認
         assert!(name.is_some());
     }
 
     #[test]
     fn test_get_samurai_name() {
-        // CSVファイルを読み込む
-        let samurai_entries = read_samurai_csv_as_vec().unwrap();
-        // Samurai ID に基づいて名前を取得
+        let samurai_entries = sample_entries();
         let name = get_samurai_name(&samurai_entries).unwrap();
 
-        // 名前が取得できたことを確認
         assert!(name.is_some());
         if let Some(name) = name {
             assert!(!name.is_empty());
