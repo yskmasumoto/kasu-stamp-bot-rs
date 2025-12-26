@@ -30,7 +30,9 @@ fn normalize_toml_keys(value: toml::Value) -> toml::Value {
             }
             toml::Value::Table(normalized)
         }
-        toml::Value::Array(values) => toml::Value::Array(values.into_iter().map(normalize_toml_keys).collect()),
+        toml::Value::Array(values) => {
+            toml::Value::Array(values.into_iter().map(normalize_toml_keys).collect())
+        }
         other => other,
     }
 }
@@ -41,15 +43,20 @@ fn build_shared_config() -> Result<Config> {
     if config_path.exists() {
         let raw_toml = std::fs::read_to_string(&config_path)
             .with_context(|| format!("Failed to read config file: {}", config_path.display()))?;
-        let parsed_toml: toml::Value = toml::from_str(&raw_toml)
-            .with_context(|| format!("Failed to parse config file as TOML: {}", config_path.display()))?;
-
-        let normalized_toml = toml::to_string(&normalize_toml_keys(parsed_toml)).with_context(|| {
+        let parsed_toml: toml::Value = toml::from_str(&raw_toml).with_context(|| {
             format!(
-                "Failed to normalize config file keys (lowercasing) for: {}",
+                "Failed to parse config file as TOML: {}",
                 config_path.display()
             )
         })?;
+
+        let normalized_toml =
+            toml::to_string(&normalize_toml_keys(parsed_toml)).with_context(|| {
+                format!(
+                    "Failed to normalize config file keys (lowercasing) for: {}",
+                    config_path.display()
+                )
+            })?;
 
         builder = builder.add_source(File::from_str(&normalized_toml, config::FileFormat::Toml));
     }
