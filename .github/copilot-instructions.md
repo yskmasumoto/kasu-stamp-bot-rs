@@ -23,5 +23,4 @@
 
 ## 挙動の前提
 - Botは `config.toml` の `DISCORD_TOKEN`（または `discord_token`）で動作する。
-- `.env` ファイルを利用する。
 - 特定の絵文字 `:kasu:` をリアクションに使用する。
