@@ -30,15 +30,15 @@
 
     プロジェクトのルートディレクトリに `config.toml` という名前のファイルを作成し、以下のように記述します:
     ```toml
-    DISCORD_TOKEN = "あなたのボットトークンをここに記述"
-    SAMURAI_CSV_PATH = "data/samurai.csv"
+    discord_token = "あなたのボットトークンをここに記述"
+    samurai_csv_path = "/path/to/samurai.csv"
     ```
 
     `あなたのボットトークンをここに記述` を実際のボットトークンに置き換えてください。
 
     **注意**: `config.toml` にはトークンなどの機密情報が含まれるため、Git にコミットしないでください（このリポジトリでは `.gitignore` で除外しています）。
 
-    **補足**: `config.toml` 内のキーは大小文字を区別しないように正規化しています（例: `DISCORD_TOKEN` / `discord_token` のどちらでも可）。
+    **補足**: `config.toml` のキーは小文字の `snake_case` を前提にしています（例: `discord_token`）。キーは大小文字を区別するため、`DISCORD_TOKEN` のような大文字キーは使用しないでください。
 
 3.  **ボットを実行する:**
 
@@ -52,8 +52,10 @@
 
 ## 設定
 
-* **Discord トークン:** `config.toml` の `DISCORD_TOKEN`（または `discord_token`）で設定します。
-* **侍CSVパス:** `config.toml` の `SAMURAI_CSV_PATH`（または `samurai_csv_path`）で設定します。
+* **Discord トークン:** `config.toml` の `discord_token` で設定します。
+* **侍CSVパス:** `config.toml` の `samurai_csv_path` で設定します。
+    * CSVはヘッダー行が必須で、最低限 `Name` と `Description` 列が必要です。
+    * 例: `S_No.,Name,Description` のようなヘッダーを含むCSVを指定してください。
 * **対象絵文字:** ボットはカスタム絵文字 `:kasu:` でリアクションするようにハードコードされています。これを変更するには、`src/discord.rs` の `target_emoji_name` 変数を修正する必要があります。
 * **検知パターン:** 「侍」で終わるメッセージを検知するためのパターンは、`src/detect.rs` の正規表現で定義されています。
 
