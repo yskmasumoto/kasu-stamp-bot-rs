@@ -53,7 +53,7 @@ pub fn app_config() -> &'static AppConfig {
 impl AppConfig {
     /// 設定ファイルから設定を読み込む
     ///
-    /// 読み込み優先順位:
+    /// 設定ファイル:
     /// 1. config.toml ファイル
     ///
     /// 読み込んだ設定値は `config::init_app_config()` を通じてグローバルに公開され、
