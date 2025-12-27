@@ -22,6 +22,5 @@
 - **ログ**: `log` crate (`info!`, `error!` 等) を使用して適切に出力する。
 
 ## 挙動の前提
-- Botは `DISCORD_TOKEN` 環境変数で動作する。
-- `.env` ファイルを利用する。
+- Botは `config.toml` の `DISCORD_TOKEN`（または `discord_token`）で動作する。
 - 特定の絵文字 `:kasu:` をリアクションに使用する。

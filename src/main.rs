@@ -87,7 +87,7 @@ impl EventHandler for Handler {
 #[tokio::main]
 async fn main() {
     // --- 設定の読み込み ---
-    // 環境変数またはconfig.tomlファイルから設定を読み込む
+    // config.tomlファイルから設定を読み込む
     let app_config = config::init_app_config()
         .context("Failed to initialize configuration")
         .expect("Configuration is required to start the bot");
