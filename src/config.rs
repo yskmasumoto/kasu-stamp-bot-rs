@@ -1,13 +1,13 @@
 use anyhow::{Context, Result, anyhow};
-use config::{Config, Environment, File};
+use config::{Config, File};
 use once_cell::sync::OnceCell;
 use serde::Deserialize;
 use std::path::PathBuf;
 
 /// アプリケーション設定を保持する構造体
 ///
-/// この構造体は `config` クレートを使用して環境変数や設定ファイルから設定を読み込みます。
-/// 設定の読み込み優先順位は: 環境変数 > config.toml ファイル
+/// この構造体は `config` クレートを使用して設定ファイルから設定を読み込みます。
+/// 設定は `config.toml` ファイルから読み込みます。
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
     /// Discord ボットのトークン
@@ -15,53 +15,16 @@ pub struct AppConfig {
 
     /// 侍データのCSVファイルパス
     ///
-    /// 読み込み優先順位（後に追加されたソースが優先）:
-    /// 1. config.toml ファイル (オプショナル、基本設定)
-    /// 2. 環境変数 (上書き、最優先)
+    /// 読み込み元:
+    /// - config.toml
     pub samurai_csv_path: String,
-}
-
-fn normalize_toml_keys(value: toml::Value) -> toml::Value {
-    match value {
-        toml::Value::Table(table) => {
-            let mut normalized = toml::Table::new();
-            for (key, value) in table {
-                normalized.insert(key.to_lowercase(), normalize_toml_keys(value));
-            }
-            toml::Value::Table(normalized)
-        }
-        toml::Value::Array(values) => {
-            toml::Value::Array(values.into_iter().map(normalize_toml_keys).collect())
-        }
-        other => other,
-    }
 }
 
 fn build_shared_config() -> Result<Config> {
     let mut builder = Config::builder();
     let config_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("config.toml");
-    if config_path.exists() {
-        let raw_toml = std::fs::read_to_string(&config_path)
-            .with_context(|| format!("Failed to read config file: {}", config_path.display()))?;
-        let parsed_toml: toml::Value = toml::from_str(&raw_toml).with_context(|| {
-            format!(
-                "Failed to parse config file as TOML: {}",
-                config_path.display()
-            )
-        })?;
-
-        let normalized_toml =
-            toml::to_string(&normalize_toml_keys(parsed_toml)).with_context(|| {
-                format!(
-                    "Failed to normalize config file keys (lowercasing) for: {}",
-                    config_path.display()
-                )
-            })?;
-
-        builder = builder.add_source(File::from_str(&normalized_toml, config::FileFormat::Toml));
-    }
+    builder = builder.add_source(File::from(config_path).required(true));
     builder
-        .add_source(Environment::default())
         .build()
         .context("Failed to build configuration for the samurai bot")
 }
@@ -88,11 +51,10 @@ pub fn app_config() -> &'static AppConfig {
 }
 
 impl AppConfig {
-    /// 環境変数と設定ファイルから設定を読み込む
+    /// 設定ファイルから設定を読み込む
     ///
     /// 読み込み優先順位:
-    /// 1. 環境変数
-    /// 2. config.toml ファイル (オプショナル)
+    /// 1. config.toml ファイル
     ///
     /// 読み込んだ設定値は `config::init_app_config()` を通じてグローバルに公開され、
     /// 他のモジュールから `config::app_config()` で取得できます。
@@ -105,7 +67,7 @@ impl AppConfig {
         let app_config: Self = config
             .try_deserialize()
             .context(
-                "Failed to deserialize configuration. Make sure DISCORD_TOKEN and SAMURAI_CSV_PATH are set (env vars), or config.toml provides discord_token and samurai_csv_path",
+                "Failed to deserialize configuration. Make sure config.toml provides discord_token and samurai_csv_path",
             )?;
         Ok(app_config)
     }
@@ -114,30 +76,21 @@ impl AppConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{Mutex, OnceLock};
 
     #[test]
-    fn load_from_env_uppercase_keys() {
-        static ENV_MUTEX: OnceLock<Mutex<()>> = OnceLock::new();
-        let _guard = ENV_MUTEX
-            .get_or_init(|| Mutex::new(()))
-            .lock()
-            .expect("lock ENV_MUTEX");
+    fn load_from_toml_lowercase_keys() {
+        let raw_toml = r#"
+        discord_token = "token_lower"
+        samurai_csv_path = "/path/lower.csv"
+        "#;
 
-        unsafe {
-            std::env::set_var("DISCORD_TOKEN", "dummy_token");
-            std::env::set_var("SAMURAI_CSV_PATH", "/tmp/samurai.csv");
-        }
+        let config = Config::builder()
+            .add_source(File::from_str(raw_toml, config::FileFormat::Toml))
+            .build()
+            .expect("build config");
+        let app_config: AppConfig = config.try_deserialize().expect("deserialize AppConfig");
 
-        let config = build_shared_config().expect("build config");
-        let app_config: AppConfig = config.try_deserialize().expect("deserialize config");
-
-        assert_eq!(app_config.discord_token, "dummy_token");
-        assert_eq!(app_config.samurai_csv_path, "/tmp/samurai.csv");
-
-        unsafe {
-            std::env::remove_var("DISCORD_TOKEN");
-            std::env::remove_var("SAMURAI_CSV_PATH");
-        }
+        assert_eq!(app_config.discord_token, "token_lower");
+        assert_eq!(app_config.samurai_csv_path, "/path/lower.csv");
     }
 }
