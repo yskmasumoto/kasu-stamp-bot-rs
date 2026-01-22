@@ -179,6 +179,7 @@ struct ChatRequest {
 #[derive(Debug, Deserialize)]
 struct ChatResponse {
     message: Message,
+    #[serde(rename = "done")]
     _done: bool,
 }
 
@@ -198,4 +199,87 @@ struct ChatChunk {
 #[derive(Debug, Deserialize)]
 struct ErrorResponse {
     error: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn message_serde_roundtrip() {
+        let msg = Message {
+            role: "user".to_string(),
+            content: "hello".to_string(),
+        };
+
+        let serialized = serde_json::to_string(&msg).expect("serialize Message");
+        let deserialized: Message = serde_json::from_str(&serialized).expect("deserialize Message");
+
+        assert_eq!(deserialized.role, "user");
+        assert_eq!(deserialized.content, "hello");
+    }
+
+    #[test]
+    fn chat_request_serializes_expected_shape() {
+        let req = ChatRequest {
+            model: "my-model".to_string(),
+            messages: vec![
+                Message {
+                    role: "system".to_string(),
+                    content: "You are helpful".to_string(),
+                },
+                Message {
+                    role: "user".to_string(),
+                    content: "Hi".to_string(),
+                },
+            ],
+            stream: false,
+        };
+
+        let value = serde_json::to_value(&req).expect("serialize ChatRequest");
+        let expected = json!({
+            "model": "my-model",
+            "messages": [
+                {"role": "system", "content": "You are helpful"},
+                {"role": "user", "content": "Hi"}
+            ],
+            "stream": false
+        });
+
+        assert_eq!(value, expected);
+    }
+
+    #[test]
+    fn chat_response_deserializes() {
+        let raw = r#"{
+            "message": {"role": "assistant", "content": "Hello!"},
+            "done": true
+        }"#;
+
+        let resp: ChatResponse = serde_json::from_str(raw).expect("deserialize ChatResponse");
+        assert_eq!(resp.message.role, "assistant");
+        assert_eq!(resp.message.content, "Hello!");
+        assert!(resp._done);
+    }
+
+    #[test]
+    fn chat_chunk_deserializes() {
+        let raw = r#"{
+            "message": {"role": "assistant", "content": "partial"},
+            "done": false
+        }"#;
+
+        let chunk: ChatChunk = serde_json::from_str(raw).expect("deserialize ChatChunk");
+        assert_eq!(chunk.message.role, "assistant");
+        assert_eq!(chunk.message.content, "partial");
+        assert!(!chunk.done);
+    }
+
+    #[test]
+    fn error_response_deserializes() {
+        let raw = r#"{"error": "model not found"}"#;
+        let err: ErrorResponse = serde_json::from_str(raw).expect("deserialize ErrorResponse");
+        assert_eq!(err.error, "model not found");
+    }
 }
