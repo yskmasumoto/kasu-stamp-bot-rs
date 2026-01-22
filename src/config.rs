@@ -91,6 +91,9 @@ mod tests {
         let raw_toml = r#"
         discord_token = "token_lower"
         samurai_csv_path = "/path/lower.csv"
+        default_ollama_base_url = "http://127.0.0.1:11434"
+        default_ollama_model = "llama3.2:1b"
+        default_system_prompt_path = "/path/system_prompt.txt"
         "#;
 
         let config = Config::builder()
@@ -101,5 +104,11 @@ mod tests {
 
         assert_eq!(app_config.discord_token, "token_lower");
         assert_eq!(app_config.samurai_csv_path, "/path/lower.csv");
+        assert_eq!(app_config.default_ollama_base_url, "http://127.0.0.1:11434");
+        assert_eq!(app_config.default_ollama_model, "llama3.2:1b");
+        assert_eq!(
+            app_config.default_system_prompt_path,
+            "/path/system_prompt.txt"
+        );
     }
 }
