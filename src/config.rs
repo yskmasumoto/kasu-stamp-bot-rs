@@ -76,7 +76,7 @@ impl AppConfig {
         let app_config: Self = config
             .try_deserialize()
             .context(
-                "Failed to deserialize configuration. Make sure config.toml provides toml keys matching AppConfig fields.",
+                "Failed to deserialize configuration. Make sure config.toml provides discord_token, samurai_csv_path, default_ollama_base_url, default_ollama_model, and default_system_prompt_path",
             )?;
         Ok(app_config)
     }
