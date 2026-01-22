@@ -28,8 +28,14 @@ impl OllamaChat {
         let system_prompt = std::fs::read_to_string(&app_config().default_system_prompt_path)
             .unwrap_or_else(|_| "You are a helpful assistant.".to_string());
 
+        let http_client = Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .build()
+            .expect("Failed to build HTTP client");
+
         Self {
-            http: Client::new(),
+            http: http_client,
             base_url,
             model,
             system_prompt,

@@ -87,13 +87,12 @@ impl EventHandler for Handler {
             // --- メッセージの内容に応じてチャットボットで応答 ---
             let chat_client = {
                 let data = ctx.data.read().await;
-                match data.get::<OllamaChatKey>() {
-                    Some(c) => Arc::clone(c),
-                    None => {
-                        error!("OllamaChat is not initialized in client data");
-                        return;
-                    }
-                }
+                data.get::<OllamaChatKey>().cloned()
+            };
+
+            let Some(chat_client) = chat_client else {
+                error!("OllamaChat is not initialized in client data");
+                return;
             };
 
             let reply = match chat_client.chat_once(&msg.content).await {
