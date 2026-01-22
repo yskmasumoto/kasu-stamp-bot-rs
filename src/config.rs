@@ -18,6 +18,15 @@ pub struct AppConfig {
     /// 読み込み元:
     /// - config.toml
     pub samurai_csv_path: String,
+
+    /// ollama サーバーのベースURL
+    pub default_ollama_base_url: String,
+
+    /// 使用する ollama モデル名
+    pub default_ollama_model: String,
+
+    /// システムプロンプトのファイルパス
+    pub default_system_prompt_path: String,
 }
 
 fn build_shared_config() -> Result<Config> {
@@ -67,7 +76,7 @@ impl AppConfig {
         let app_config: Self = config
             .try_deserialize()
             .context(
-                "Failed to deserialize configuration. Make sure config.toml provides discord_token and samurai_csv_path",
+                "Failed to deserialize configuration. Make sure config.toml provides toml keys matching AppConfig fields.",
             )?;
         Ok(app_config)
     }
