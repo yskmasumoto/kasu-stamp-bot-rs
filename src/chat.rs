@@ -1,5 +1,5 @@
 use crate::config::app_config;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use log::debug;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -93,7 +93,11 @@ impl OllamaChat {
             .context("failed to read ollama response body")?;
 
         if !status.is_success() {
-            return Err(anyhow!("ollama returned non-2xx: status={} body={}", status, body));
+            return Err(anyhow!(
+                "ollama returned non-2xx: status={} body={}",
+                status,
+                body
+            ));
         }
 
         // 1) 通常のストリーミングでないレスポンス
@@ -146,7 +150,7 @@ impl OllamaChat {
 /// * `content` - メッセージの内容
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Message {
-    pub role: String,    // "system" | "user" | "assistant"
+    pub role: String, // "system" | "user" | "assistant"
     pub content: String,
 }
 
