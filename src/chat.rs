@@ -21,11 +21,13 @@ impl OllamaChat {
     /// # 戻り値
     /// * `OllamaChat` - 新しいチャットクライアント
     pub fn new() -> Self {
-        let base_url = std::fs::read_to_string(&app_config().default_ollama_base_url)
-            .unwrap_or_else(|_| "http://127.0.0.1:11434".to_string());
-        let model = std::fs::read_to_string(&app_config().default_ollama_model)
-            .unwrap_or_else(|_| "hf.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF".to_string());
-        let system_prompt = std::fs::read_to_string(&app_config().default_system_prompt_path)
+        // 設定値を取得する（base_url と model は設定値そのものを使用する）
+        let config = app_config();
+        let base_url = config.default_ollama_base_url.clone();
+        let model = config.default_ollama_model.clone();
+
+        // system_prompt はパスからファイル読み込みし、失敗した場合はデフォルト文言を使用する
+        let system_prompt = std::fs::read_to_string(&config.default_system_prompt_path)
             .unwrap_or_else(|_| "You are a helpful assistant.".to_string());
 
         let http_client = Client::builder()
