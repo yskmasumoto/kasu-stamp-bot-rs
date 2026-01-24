@@ -81,9 +81,9 @@
 
 ### Ollama（ザウルス機能）
 
-* **Ollama Base URL:** `config.toml` の `default_ollama_base_url`（または環境変数 `OLLAMA_BASE_URL`）
-* **Ollama Model:** `config.toml` の `default_ollama_model`（または環境変数 `OLLAMA_MODEL`）
-* **System Prompt:** 環境変数 `SYSTEM_PROMPT` で上書きできます（未指定時はデフォルト文言を使用）
+* **Ollama Base URL:** `config.toml` の `default_ollama_base_url` で設定します。
+* **Ollama Model:** `config.toml` の `default_ollama_model` で設定します。
+* **System Prompt:** `config.toml` の `default_system_prompt_path` でシステムプロンプトを記述したファイルパスを設定します（未指定時はデフォルト文言を使用）
 
 ## 動作解説
 
