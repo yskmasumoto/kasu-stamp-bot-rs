@@ -128,11 +128,10 @@ impl OllamaChat {
                 return Err(anyhow!("ollama error: {}", err.error));
             }
 
-            let chunk: ChatChunk = serde_json::from_str(line).map_err(|e| {
-                anyhow!(
-                    "ollama returned unexpected json line: {} (status={})",
-                    e,
-                    status
+            let chunk: ChatChunk = serde_json::from_str(line).with_context(|| {
+                format!(
+                    "ollama returned unexpected json line (status={}): {}",
+                    status, line
                 )
             })?;
             combined.push_str(&chunk.message.content);
