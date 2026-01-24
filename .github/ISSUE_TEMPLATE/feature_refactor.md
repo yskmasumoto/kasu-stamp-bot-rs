@@ -12,6 +12,8 @@ assignees: ''
 - [ ] `detect`
 - [ ] `discord`
 - [ ] `table`
+- [ ] `chat`
+- [ ] `config`
 - [ ] Configuration (Cargo.toml, etc.)
 
 ## 具体的なタスク (Tasks)

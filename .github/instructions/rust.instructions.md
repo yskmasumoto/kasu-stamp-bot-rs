@@ -1,5 +1,6 @@
 ---
 applyTo: "**/*.rs"
+excludeAgent: ["coding-agent"]
 ---
 
 # Rust (Serenity Bot) Review Instructions

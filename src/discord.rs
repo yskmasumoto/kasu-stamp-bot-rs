@@ -69,3 +69,14 @@ pub async fn samurai_reply(ctx: &Context, msg: &Message, content: &str) {
         error!("Error replying to message {}: {:?}", msg.id, why);
     }
 }
+
+/// メッセージに返信する関数（ザウルス用）
+/// # 引数
+/// * `ctx` - コンテキスト
+/// * `msg` - 返信するメッセージ
+/// * `content` - 返信内容
+pub async fn zaurus_reply(ctx: &Context, msg: &Message, content: &str) {
+    if let Err(why) = msg.reply(ctx, content).await {
+        error!("Error replying to message {}: {:?}", msg.id, why);
+    }
+}

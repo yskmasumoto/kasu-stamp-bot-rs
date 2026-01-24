@@ -11,10 +11,13 @@
 - **エラーハンドリング**: `anyhow` crate を使用する。
 - **静的変数管理**: `once_cell::sync::Lazy` を使用する。
 - **CSV処理**: `csv` crate を使用し、`src/table.rs` で管理する。
+- **設定管理**: `config` crate を使用し、`config.toml` から読み込む。
 
 ## コーディングスタイル
 - **コメント**: コード内のコメントは全て「日本語」で記述すること。
 - **モジュール構成**:
+  - `src/chat.rs`: ollama APIとの通信ロジック
+  - `src/config.rs`: アプリケーション設定の読み込みと管理
   - `src/detect.rs`: 文字列判定ロジック（正規表現 `regex` 使用）
   - `src/discord.rs`: Discord APIとの通信（リアクション、リプライ）
   - `src/table.rs`: CSVデータの読み込みとランダム取得

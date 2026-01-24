@@ -18,6 +18,35 @@ pub struct AppConfig {
     /// 読み込み元:
     /// - config.toml
     pub samurai_csv_path: String,
+
+    /// ollama サーバーのベースURL
+    ///
+    /// 読み込み元:
+    /// - config.toml
+    ///
+    /// 例:
+    /// - `"http://localhost:11434"`
+    pub default_ollama_base_url: String,
+
+    /// 使用する ollama モデル名
+    ///
+    /// 読み込み元:
+    /// - config.toml
+    ///
+    /// 例:
+    /// - `"llama2"`
+    /// - `"hf.co/..."` (Ollama がサポートする Hugging Face 上のモデル指定など)
+    pub default_ollama_model: String,
+
+    /// システムプロンプトのファイルパス
+    ///
+    /// 読み込み元:
+    /// - config.toml
+    ///
+    /// システムプロンプトを含むテキストファイルへのパスを指定します。
+    /// 例:
+    /// - `"prompts/system_prompt.txt"`
+    pub default_system_prompt_path: String,
 }
 
 fn build_shared_config() -> Result<Config> {
@@ -67,7 +96,7 @@ impl AppConfig {
         let app_config: Self = config
             .try_deserialize()
             .context(
-                "Failed to deserialize configuration. Make sure config.toml provides discord_token and samurai_csv_path",
+                "Failed to deserialize configuration. Make sure config.toml provides discord_token, samurai_csv_path, default_ollama_base_url, default_ollama_model, and default_system_prompt_path",
             )?;
         Ok(app_config)
     }
@@ -82,6 +111,9 @@ mod tests {
         let raw_toml = r#"
         discord_token = "token_lower"
         samurai_csv_path = "/path/lower.csv"
+        default_ollama_base_url = "http://127.0.0.1:11434"
+        default_ollama_model = "llama3.2:1b"
+        default_system_prompt_path = "/path/system_prompt.txt"
         "#;
 
         let config = Config::builder()
@@ -92,5 +124,11 @@ mod tests {
 
         assert_eq!(app_config.discord_token, "token_lower");
         assert_eq!(app_config.samurai_csv_path, "/path/lower.csv");
+        assert_eq!(app_config.default_ollama_base_url, "http://127.0.0.1:11434");
+        assert_eq!(app_config.default_ollama_model, "llama3.2:1b");
+        assert_eq!(
+            app_config.default_system_prompt_path,
+            "/path/system_prompt.txt"
+        );
     }
 }
