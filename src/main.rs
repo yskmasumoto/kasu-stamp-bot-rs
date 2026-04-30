@@ -4,8 +4,6 @@ use once_cell::sync::Lazy;
 use serenity::async_trait;
 use serenity::model::{channel::Message, gateway::Ready, prelude::*};
 use serenity::prelude::*;
-use std::sync::Arc;
-mod chat;
 mod config;
 mod detect;
 mod discord;
@@ -15,12 +13,6 @@ use table::SamuraiEntry;
 
 // イベントハンドラ用構造体
 struct Handler;
-
-struct OllamaChatKey;
-
-impl TypeMapKey for OllamaChatKey {
-    type Value = Arc<chat::OllamaChat>;
-}
 
 // テーブル
 static SAMURAI_DATA: Lazy<Result<Vec<SamuraiEntry>, Error>> =
@@ -46,7 +38,6 @@ impl EventHandler for Handler {
 
         // --- メッセージの内容から侍を検出 ---
         let is_samurai = detect::contains_samurai_phrase(&msg.content);
-        let is_zaurus = detect::contains_zaurus_phrase(&msg.content);
 
         if is_samurai {
             info!("Received '侍' from user: {}", msg.author.name);
@@ -81,31 +72,6 @@ impl EventHandler for Handler {
             // --- メッセージにリプライ ---
             discord::samurai_reply(&ctx, &msg, &sname).await;
             info!("Replied to message: {}", msg.id);
-        } else if is_zaurus {
-            info!("Received 'ザウルス' from user: {}", msg.author.name);
-
-            // --- メッセージの内容に応じてチャットボットで応答 ---
-            let chat_client = {
-                let data = ctx.data.read().await;
-                data.get::<OllamaChatKey>().cloned()
-            };
-
-            let Some(chat_client) = chat_client else {
-                error!("OllamaChat is not initialized in client data");
-                return;
-            };
-
-            let reply = match chat_client.chat_once(&msg.content).await {
-                Ok(text) => text,
-                Err(e) => {
-                    error!("Error chatting with Ollama: {:?}", e);
-                    return;
-                }
-            };
-
-            // --- メッセージにリプライ ---
-            discord::zaurus_reply(&ctx, &msg, &reply).await;
-            info!("Replied to message: {}", msg.id);
         }
     }
 
@@ -136,19 +102,11 @@ async fn main() {
         | GatewayIntents::GUILDS            // サーバー情報の取得 (キャッシュや絵文字検索に必要)
         | GatewayIntents::GUILD_EMOJIS_AND_STICKERS; // サーバーの絵文字リスト取得
 
-    // チャットボットクライアントの起動（mainで初期化して共有）
-    let chat_client = Arc::new(chat::OllamaChat::new());
-
     // --- クライアントの構築 ---
     let mut client = Client::builder(token, intents)
         .event_handler(Handler) // 作成したイベントハンドラを設定
         .await
         .expect("Error creating client");
-
-    {
-        let mut data = client.data.write().await;
-        data.insert::<OllamaChatKey>(Arc::clone(&chat_client));
-    }
 
     // --- 利用データの取得 ---
     match &*SAMURAI_DATA {
